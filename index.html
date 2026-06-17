@@ -1298,8 +1298,9 @@ function update(dt){
 
   if(prog>.90&&!stSet){
     stSet=true;
-    stY=Math.max(H*.27,Math.min(H*.58,gy));
-    dockX=Math.min(W-140,Math.max(W*.6,GX()+170));
+    stY=Math.max(H*.35,Math.min(H*.55,gy));
+    // Station width is ~300px — make sure it fits: dock at W*0.55 max
+    dockX=Math.min(W*0.55,Math.max(W*.45,GX()+140));
   }
   if(prog>.95)tgtY=stY;
 
@@ -1358,6 +1359,22 @@ function cloud(x,y,s){
 function drawStation(sx,py){
   var wb=Math.sin(tG*2.2);
   ctx.textAlign='center';
+
+  // Auto-scale so the station always fits on screen
+  // Station spans from sx-80 to sx+260 (340px wide) and py-188 to py+98 (286px tall)
+  var stW=340, stH=286;
+  var maxW=W-sx+80; // available width from sx-80 to right edge
+  var maxH=py+90;   // available height from top to py+90
+  var scaleX=Math.min(1, maxW/stW);
+  var scaleY=Math.min(1, maxH/stH);
+  var sc=Math.min(scaleX,scaleY,1);
+
+  ctx.save();
+  // Scale around the base of the station (sx, py)
+  ctx.translate(sx,py);
+  ctx.scale(sc,sc);
+  ctx.translate(-sx,-py);
+
   // bg mountain for depth
   ctx.fillStyle=lerpC('#7898A8','#5878A0',prog*.7);
   ctx.beginPath();ctx.moveTo(sx-80,H);ctx.lineTo(sx-80,py+90);
@@ -1407,7 +1424,7 @@ function drawStation(sx,py){
   ctx.fillStyle='rgba(0,0,0,.16)';
   ctx.beginPath();ctx.moveTo(sx-40,py-60);ctx.lineTo(sx+90,py-122);ctx.lineTo(sx+90,py-60);ctx.closePath();ctx.fill();
   ctx.fillStyle='#C89A10';ctx.fillRect(sx-40,py-64,260,5);
-  // sign
+  // sign — GIPFELEVENT / ELLMAU 2026
   ctx.fillStyle='#4A3820';ctx.fillRect(sx+85,py-144,9,30);
   var sG=ctx.createLinearGradient(0,py-188,0,py-138);
   sG.addColorStop(0,'#FFFDF8');sG.addColorStop(1,'#EEE4D2');
@@ -1429,6 +1446,8 @@ function drawStation(sx,py){
     ctx.fillStyle=i%2?'#E8C547':'#C8102E';
     ctx.beginPath();ctx.moveTo(bx-5,by);ctx.lineTo(bx+5,by);ctx.lineTo(bx,by+10);ctx.closePath();ctx.fill();
   }
+
+  ctx.restore();
 }
 function fPole(x,y,c,wb){
   ctx.strokeStyle='#4A3820';ctx.lineWidth=3;
