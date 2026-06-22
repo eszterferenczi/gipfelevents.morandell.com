@@ -1170,10 +1170,9 @@ document.getElementById('pN').addEventListener('keydown',function(e){
 
 document.getElementById('againBtn').addEventListener('click',function(){
   run++;$eOv.classList.add('hidden');
-  // Reset end screen for next round
+  // Reset end screen panels for next round
   document.getElementById('nameStep').classList.remove('hidden');
   document.getElementById('scoreStep').classList.add('hidden');
-  document.getElementById('pN').value=getSavedName();
   $hud.classList.remove('hidden');
   reset();t0=performance.now();state='riding';
 });
@@ -1195,15 +1194,22 @@ async function finish(){
   state='summit';
   elapsed=(performance.now()-t0)/1000;
   hideQ();$hud.classList.add('hidden');
-  // Show score in hero
   document.getElementById('eS').textContent=score;
   document.getElementById('eT').textContent=elapsed>0?fmtT(elapsed):'';
-  // Pre-fill name if previously saved
-  document.getElementById('pN').value=getSavedName();
-  // Show name step, hide score step
-  document.getElementById('nameStep').classList.remove('hidden');
-  document.getElementById('scoreStep').classList.add('hidden');
   $eOv.classList.remove('hidden');
+
+  // If name already known → skip name step, go straight to score
+  var saved=getSavedName();
+  if(saved){
+    pName=xss(saved);
+    document.getElementById('nameStep').classList.add('hidden');
+    document.getElementById('scoreStep').classList.remove('hidden');
+    submitScore();
+  } else {
+    document.getElementById('pN').value='';
+    document.getElementById('nameStep').classList.remove('hidden');
+    document.getElementById('scoreStep').classList.add('hidden');
+  }
 }
 
 /* ══════════ HUD ══════════ */
