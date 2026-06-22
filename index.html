@@ -896,14 +896,6 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
     <div class="s-desc">Mit der Gondel hinauf zum Gipfel — herrliches Tiroler Bergpanorama garantiert.</div>
   </div>
 
-  <!-- Name input -->
-  <div class="s-name-wrap">
-    <label for="pN">Dein Vorname</label>
-    <input id="pN" type="text" placeholder="Name eingeben …" maxlength="20"
-           autocomplete="off" autocorrect="off" spellcheck="false">
-    <div class="s-priv">🔒 Nur dein Vorname wird im Ranking gespeichert</div>
-  </div>
-
   <!-- Info box -->
   <div class="s-infobox">
     <div class="s-control">
@@ -960,23 +952,43 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
     <div class="etime" id="eT"></div>
   </div>
   <div class="ebody">
-    <div class="myrank">
-      <div class="myrank-n" id="mRN">–</div>
-      <div>
-        <b id="mRL">Deine Platzierung</b>
-        <span id="mRS"></span>
+
+    <!-- STEP 1: Name input -->
+    <div id="nameStep">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:22px;font-weight:800;color:#1a1a1a;margin-bottom:4px">Gut gemacht! 🎉</div>
+        <div style="font-size:14px;color:#888">Gib deinen Namen ein um dein Ergebnis zu speichern.</div>
+      </div>
+      <div class="s-name-wrap" style="margin:0 0 14px">
+        <label for="pN">Dein Vorname</label>
+        <input id="pN" type="text" placeholder="Name eingeben …" maxlength="20"
+               autocomplete="off" autocorrect="off" spellcheck="false">
+        <div class="s-priv">🔒 Nur dein Vorname wird gespeichert</div>
+      </div>
+      <button class="btn-play" id="submitNameBtn">Ergebnis anzeigen</button>
+    </div>
+
+    <!-- STEP 2: Score + Leaderboard (hidden until name submitted) -->
+    <div id="scoreStep" class="hidden">
+      <div class="myrank">
+        <div class="myrank-n" id="mRN">–</div>
+        <div>
+          <b id="mRL">Deine Platzierung</b>
+          <span id="mRS"></span>
+        </div>
+      </div>
+      <div class="lbst" id="lbSt"></div>
+      <div class="sec-head">Top 3 · Meiste Gläser · Bei Gleichstand: schnellste Zeit</div>
+      <div class="podium" id="pod"><div class="lb-empty">Wird geladen…</div></div>
+      <div class="acts">
+        <button class="btn-play" id="againBtn">Nochmal spielen</button>
+        <a class="btn-ig" href="https://www.instagram.com/morandell.international/" target="_blank" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+          Morandell auf Instagram
+        </a>
       </div>
     </div>
-    <div class="lbst" id="lbSt"></div>
-    <div class="sec-head">Top 3 · Meiste Gläser · Bei Gleichstand: schnellste Zeit</div>
-    <div class="podium" id="pod"><div class="lb-empty">Wird geladen…</div></div>
-    <div class="acts">
-      <button class="btn-play" id="againBtn">Nochmal spielen</button>
-      <a class="btn-ig" href="https://www.instagram.com/morandell.international/" target="_blank" rel="noopener">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-        Morandell auf Instagram
-      </a>
-    </div>
+
   </div>
 </div>
 </div>
@@ -1138,30 +1150,35 @@ var $hud=document.getElementById('hud');
 document.getElementById('pN').value=getSavedName();
 
 document.getElementById('startBtn').addEventListener('click',function(){
-  var v=document.getElementById('pN').value.trim();
-  pName=xss(v||'Gast');if(v)saveName(v);
   $sOv.classList.add('hidden');
   $hud.classList.remove('hidden');
   reset();t0=performance.now();state='riding';
 });
 
+document.getElementById('submitNameBtn').addEventListener('click',function(){
+  var v=document.getElementById('pN').value.trim();
+  pName=xss(v||'Gast');if(v)saveName(v);
+  document.getElementById('nameStep').classList.add('hidden');
+  document.getElementById('scoreStep').classList.remove('hidden');
+  submitScore();
+});
+
+// Also allow Enter key on name input
+document.getElementById('pN').addEventListener('keydown',function(e){
+  if(e.key==='Enter') document.getElementById('submitNameBtn').click();
+});
+
 document.getElementById('againBtn').addEventListener('click',function(){
   run++;$eOv.classList.add('hidden');
+  // Reset end screen for next round
+  document.getElementById('nameStep').classList.remove('hidden');
+  document.getElementById('scoreStep').classList.add('hidden');
+  document.getElementById('pN').value=getSavedName();
   $hud.classList.remove('hidden');
   reset();t0=performance.now();state='riding';
 });
 
-async function finish(){
-  state='summit';
-  elapsed=(performance.now()-t0)/1000;
-  hideQ();$hud.classList.add('hidden');
-  document.getElementById('eS').textContent=score;
-  document.getElementById('eT').textContent=elapsed>0?fmtT(elapsed):'';
-  document.getElementById('mRN').textContent='…';
-  document.getElementById('mRL').textContent='Wird berechnet';
-  document.getElementById('mRS').textContent='';
-  document.getElementById('pod').innerHTML='<div class="lb-empty">Lädt…</div>';
-  $eOv.classList.remove('hidden');
+async function submitScore(){
   var st=document.getElementById('lbSt');
   st.textContent='Speichern…';st.className='lbst';
   try{
@@ -1172,6 +1189,21 @@ async function finish(){
     st.textContent='Offline';st.className='lbst err';
     renderEnd([],pName,score,elapsed);
   }
+}
+
+async function finish(){
+  state='summit';
+  elapsed=(performance.now()-t0)/1000;
+  hideQ();$hud.classList.add('hidden');
+  // Show score in hero
+  document.getElementById('eS').textContent=score;
+  document.getElementById('eT').textContent=elapsed>0?fmtT(elapsed):'';
+  // Pre-fill name if previously saved
+  document.getElementById('pN').value=getSavedName();
+  // Show name step, hide score step
+  document.getElementById('nameStep').classList.remove('hidden');
+  document.getElementById('scoreStep').classList.add('hidden');
+  $eOv.classList.remove('hidden');
 }
 
 /* ══════════ HUD ══════════ */
