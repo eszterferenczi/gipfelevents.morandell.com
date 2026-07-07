@@ -840,15 +840,12 @@ var EVT=(function(){
       return EVENTS[p]?EVENTS[p]:EVENTS.ellmau;}catch(e){return EVENTS.ellmau;}
 })();
 
-/* URL zum Spiel — bestimmt, wohin der QR-Code führt. Drei Möglichkeiten:
-   1. Nichts tun → es wird automatisch "gipfelevent-game.html?event=…" im
-      SELBEN Ordner wie diese Seite verwendet. Funktioniert auf GitHub Pages
-      und später auf der Subdomain — aber NUR wenn die Spiel-Datei genau so
-      heißt und daneben liegt. (Lokal als Datei geöffnet funktioniert der QR
-      nicht, weil das Handy "file://…" nicht erreichen kann.)
-   2. Hier fest eintragen, z.B. 'https://spiel.morandell.at/?event=ellmau'
-   3. Per URL-Parameter mitgeben: leaderboard-beamer.html?event=ellmau&game=https://… */
-var GAME_URL='';
+/* URL zum Spiel — bestimmt, wohin der QR-Code führt.
+   Aktuell fest auf die GitHub-Pages-Adresse eingestellt (Spiel = index.html).
+   ⚠️ Beim Umzug auf die Morandell-Subdomain nur diese eine Zeile ändern,
+   z.B.: 'https://spiel.morandell.at/?event='+EVT.key
+   Kann auch per URL-Parameter übersteuert werden: …&game=https://… */
+var GAME_URL='https://eszterferenczi.github.io/gipfelevents.morandell.com/?event='+EVT.key;
 try{
   var gp=new URLSearchParams(location.search).get('game');
   if(gp)GAME_URL=gp;
@@ -856,8 +853,8 @@ try{
 
 /* Gewinn-Text pro Event (HTML erlaubt, <b> wird gold) */
 var PRIZES={
-  ellmau:'Die <b>Top 3</b> der Rangliste gewinnen ein exklusives Morandell-Weinpaket. Siegerehrung um <b>16:00 Uhr</b>.',
-  galzig:'Die <b>Top 3</b> der Rangliste gewinnen ein exklusives Morandell-Weinpaket. Siegerehrung um <b>16:00 Uhr</b>.'
+  ellmau:'Unter den besten Spielern werden <b>3 hochwertige Weine</b> verlost. 🍷',
+  galzig:'Unter den besten Spielern werden <b>3 hochwertige Weine</b> verlost. 🍷'
 };
 
 /* Aktualisierungs-Intervall in Sekunden */
@@ -872,12 +869,27 @@ document.getElementById('evName').textContent=EVT.name;
 document.getElementById('prizeText').innerHTML=PRIZES[EVT.key]||PRIZES.ellmau;
 document.title='Gipfel-Challenge '+EVT.key.charAt(0).toUpperCase()+EVT.key.slice(1)+' — Live-Rangliste';
 
-var gameUrl=GAME_URL||(location.href.replace(/[^\/]*$/,'')+'gipfelevent-game.html?event='+EVT.key);
-new QRCode(document.getElementById('qr'),{
-  text:gameUrl,width:256,height:256,
-  colorDark:'#8E1528',colorLight:'#ffffff',
-  correctLevel:QRCode.CorrectLevel.M
-});
+var gameUrl=GAME_URL;
+/* QR-Code robust rendern: qrcodejs (CDN) → Fallback Bild-Dienst → Text-URL */
+(function renderQR(attempt){
+  var el=document.getElementById('qr');
+  if(window.QRCode){
+    new QRCode(el,{
+      text:gameUrl,width:256,height:256,
+      colorDark:'#8E1528',colorLight:'#ffffff',
+      correctLevel:QRCode.CorrectLevel.M
+    });
+  }else if(attempt<10){
+    /* Bibliothek lädt evtl. noch → kurz warten und nochmal versuchen */
+    setTimeout(function(){renderQR(attempt+1);},300);
+  }else{
+    /* CDN blockiert → QR als Bild von api.qrserver.com */
+    var img=new Image();
+    img.alt='QR-Code';
+    img.src='https://api.qrserver.com/v1/create-qr-code/?size=512x512&color=8E1528&bgcolor=ffffff&data='+encodeURIComponent(gameUrl);
+    el.appendChild(img);
+  }
+})(0);
 
 /* Klick/Tap → Vollbild */
 document.body.addEventListener('click',function(){
