@@ -4,6 +4,57 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Gipfelevent Ellmau 2026 — Morandell</title>
+<script>
+/* ══════════ EVENT-KONFIGURATION ══════════
+   Aufruf: spiel.html?event=ellmau  ODER  spiel.html?event=galzig
+   Ohne Parameter → Ellmau. Höhenangaben bei Bedarf anpassen. */
+var EVENTS={
+  ellmau:{
+    key:'ellmau',
+    title:'Gipfelevent Ellmau 2026 — Morandell',
+    eyebrow:'Gipfelevent Ellmau 2026 · Wilder Kaiser',
+    station:'Gipfelstation Ellmau · 1.579 m',
+    altBase:800, altTop:1579,
+    hashtag:'#GipfelChallengeEllmau'
+  },
+  galzig:{
+    key:'galzig',
+    title:'Gipfelevent Galzig 2026 — Morandell',
+    eyebrow:'Gipfelevent Galzig 2026 · St. Anton am Arlberg',
+    station:'Galzig · 2.085 m',          /* Höhe bitte prüfen/anpassen */
+    altBase:1300, altTop:2085,
+    hashtag:'#GipfelChallengeGalzig'
+  }
+};
+var EVT=(function(){
+  try{var p=new URLSearchParams(location.search).get('event');
+      return EVENTS[p]?EVENTS[p]:EVENTS.ellmau;}catch(e){return EVENTS.ellmau;}
+})();
+
+/* ══════════ GOOGLE ANALYTICS 4 (optional) ══════════
+   1. In analytics.google.com eine Web-Property anlegen
+   2. Die Mess-ID (Format "G-XXXXXXXXXX") unten eintragen
+   Solange leer bleibt GA komplett deaktiviert — das Spiel läuft trotzdem. */
+var GA_ID='';   /* z.B. 'G-AB12CD34EF' */
+
+window.dataLayer=window.dataLayer||[];
+function gtag(){dataLayer.push(arguments);}
+if(GA_ID){
+  var gs=document.createElement('script');
+  gs.async=true;gs.src='https://www.googletagmanager.com/gtag/js?id='+GA_ID;
+  document.head.appendChild(gs);
+  gtag('js',new Date());
+  gtag('config',GA_ID,{event_location:EVT.key});
+}
+/* Zentrale Tracking-Funktion — feuert nur, wenn GA_ID gesetzt ist */
+function track(name,params){
+  try{
+    if(!GA_ID)return;
+    params=params||{};params.event_location=EVT.key;
+    gtag('event',name,params);
+  }catch(e){}
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=Georgia:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -982,6 +1033,8 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
       <div class="podium" id="pod"><div class="lb-empty">Wird geladen…</div></div>
       <div class="acts">
         <button class="btn-play" id="againBtn">Nochmal spielen</button>
+        <button class="btn-play" id="shareBtn" style="background:#fff;color:#8E1528;border:2px solid #8E1528">📸 Score teilen &amp; @morandell taggen</button>
+        <div id="shareHint" style="display:none;font-size:12px;color:#888;text-align:center;line-height:1.5"></div>
         <a class="btn-ig" href="https://www.instagram.com/morandell.international/" target="_blank" rel="noopener">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
           Morandell auf Instagram
@@ -1010,17 +1063,49 @@ function saveName(n){try{localStorage.setItem('ge_pname',n);}catch(e){}}
 var SB_URL='https://zrmjnjuzxyimktmhzxze.supabase.co';
 var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpybWpuanV6eHlpbWt0bWh6eHplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE2NTkxMzgsImV4cCI6MjA5NzIzNTEzOH0.QKGFHxZQIux6flpm3SeyyoMNGItp6RSBKZC3Alo_aLA';
 
-async function dbLoad(){
+/* Anonyme Geräte-ID → erlaubt zu zählen, wie viele *verschiedene* Personen
+   spielen und wer erneut spielt (ohne personenbezogene Daten). */
+function deviceId(){
   try{
-    var res=await fetch(SB_URL+'/rest/v1/scores?select=name,pts,t,ts&order=pts.desc,t.asc&limit=100',{
-      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
-    });
-    if(!res.ok)throw new Error('load failed');
+    var id=localStorage.getItem('ge_device');
+    if(!id){id='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+            localStorage.setItem('ge_device',id);}
+    return id;
+  }catch(e){return 'anon';}
+}
+
+async function dbLoad(){
+  var H={headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}};
+  try{
+    /* Nach Event gefiltert (benötigt die Spalte "event", SQL siehe README) */
+    var res=await fetch(SB_URL+'/rest/v1/scores?select=name,pts,t,ts&event=eq.'+EVT.key+'&order=pts.desc,t.asc&limit=100',H);
+    if(!res.ok)throw new Error('filtered load failed');
     return await res.json();
   }catch(e){
-    // Fallback: localStorage
-    try{return JSON.parse(localStorage.getItem('ge_scores')||'[]');}catch(e2){return[];}
+    try{
+      /* Spalte "event" existiert noch nicht → ungefiltert laden */
+      var res2=await fetch(SB_URL+'/rest/v1/scores?select=name,pts,t,ts&order=pts.desc,t.asc&limit=100',H);
+      if(!res2.ok)throw new Error('load failed');
+      return await res2.json();
+    }catch(e1){
+      // Fallback: localStorage
+      try{return JSON.parse(localStorage.getItem('ge_scores')||'[]');}catch(e2){return[];}
+    }
   }
+}
+
+/* Jeder Spielstart wird geloggt → Anzahl Spiele, Unique Player, Wiederholer.
+   Benötigt die Tabelle "plays" in Supabase (SQL siehe README).
+   Fehlt die Tabelle, schlägt der Aufruf still fehl — das Spiel läuft weiter. */
+function logPlay(runNo){
+  try{
+    fetch(SB_URL+'/rest/v1/plays',{
+      method:'POST',
+      headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,
+               'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({event:EVT.key,device:deviceId(),run:runNo,ts:Date.now()})
+    }).catch(function(){});
+  }catch(e){}
 }
 
 async function dbPush(name,pts,t){
@@ -1032,8 +1117,17 @@ async function dbPush(name,pts,t){
         'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,
         'Content-Type':'application/json','Prefer':'return=minimal'
       },
-      body:JSON.stringify({name:xss(name),pts:pts,t:t,ts:Date.now()})
+      body:JSON.stringify({name:xss(name),pts:pts,t:t,ts:Date.now(),event:EVT.key,device:deviceId()})
     });
+    if(!res.ok){
+      /* Spalten "event"/"device" existieren evtl. noch nicht → ohne sie speichern */
+      res=await fetch(SB_URL+'/rest/v1/scores',{
+        method:'POST',
+        headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,
+                 'Content-Type':'application/json','Prefer':'return=minimal'},
+        body:JSON.stringify({name:xss(name),pts:pts,t:t,ts:Date.now()})
+      });
+    }
     if(!res.ok)throw new Error('insert failed');
     // Load updated leaderboard
     return await dbLoad();
@@ -1056,6 +1150,7 @@ function renderEnd(scores,myName,myPts,myT){
   var mi=all.findIndex(function(s){return s.name===myName&&s.pts===myPts&&Math.abs((s.t||0)-myT)<2;});
   var mr=mi>=0?mi+1:all.length+1;
   var tot=all.length;
+  window._lastRank=mr;window._lastTotal=tot;
   document.getElementById('mRN').textContent=mr;
   document.getElementById('mRL').textContent=mr===1?'Du führst die Rangliste an!':'Deine Platzierung';
   document.getElementById('mRS').textContent=tot>0?('Platz '+mr+' von '+tot+' Teilnehmer'+(tot!==1?'n':'')):'Erster Spieler!';
@@ -1075,6 +1170,102 @@ function renderEnd(scores,myName,myPts,myT){
       '</div>';
   }).join('');
 }
+
+/* ══════════ SCORE TEILEN — gebrandete Story-Card ══════════
+   Erzeugt ein 1080×1920-Bild (Instagram-Story-Format) mit Morandell-
+   Branding, Score & Handle. Wird über die native Teilen-Funktion des
+   Handys geteilt; Fallback: Bild-Download + Caption in Zwischenablage. */
+/* Morandell-Wappen (SVG aus dem Startscreen) einmalig als Bild laden,
+   damit es auf die Share-Card gezeichnet werden kann */
+var crestImg=null;
+(function(){
+  try{
+    var svg=document.querySelector('.s-crest');
+    if(!svg)return;
+    var s=new XMLSerializer().serializeToString(svg);
+    var url=URL.createObjectURL(new Blob([s],{type:'image/svg+xml;charset=utf-8'}));
+    var im=new Image();
+    im.onload=function(){crestImg=im;};
+    im.src=url;
+  }catch(e){}
+})();
+
+function buildShareCard(){
+  var c=document.createElement('canvas');c.width=1080;c.height=1920;
+  var x=c.getContext('2d');
+  /* Hintergrund: Creme mit Berg-Silhouetten */
+  x.fillStyle='#FFFDF8';x.fillRect(0,0,1080,1920);
+  x.fillStyle='rgba(142,21,40,0.06)';
+  x.beginPath();x.moveTo(0,1920);x.lineTo(0,1400);x.lineTo(280,1080);x.lineTo(520,1360);x.lineTo(760,1020);x.lineTo(1080,1420);x.lineTo(1080,1920);x.closePath();x.fill();
+  x.fillStyle='rgba(142,21,40,0.10)';
+  x.beginPath();x.moveTo(0,1920);x.lineTo(0,1560);x.lineTo(340,1240);x.lineTo(640,1520);x.lineTo(900,1300);x.lineTo(1080,1560);x.lineTo(1080,1920);x.closePath();x.fill();
+  /* Rahmen */
+  x.strokeStyle='#8E1528';x.lineWidth=10;x.strokeRect(40,40,1000,1840);
+  /* Kopf: echtes Morandell-Logo (Fallback: Schriftzug) */
+  x.textAlign='center';
+  if(crestImg){
+    var lw=700,lh=lw*(104.84/314.1);   /* Seitenverhältnis des Wappens */
+    x.drawImage(crestImg,(1080-lw)/2,110,lw,lh);
+  }else{
+    x.fillStyle='#8E1528';
+    x.font='900 92px "Barlow Condensed",sans-serif';
+    x.fillText('MORANDELL',540,240);
+  }
+  x.fillStyle='#8E1528';
+  x.font='600 34px Inter,sans-serif';x.globalAlpha=.7;
+  x.fillText('GIPFEL-CHALLENGE',540,430);x.globalAlpha=1;
+  x.font='600 40px Inter,sans-serif';x.fillStyle='#1a1a1a';
+  x.fillText(EVT.eyebrow.replace(/·/g,'—'),540,500);
+  /* Score-Kreis */
+  x.beginPath();x.arc(540,880,280,0,Math.PI*2);
+  x.fillStyle='#8E1528';x.fill();
+  x.fillStyle='#FFFDF8';
+  x.font='900 250px "Barlow Condensed",sans-serif';
+  x.fillText(String(score),540,940);
+  x.font='700 50px "Barlow Condensed",sans-serif';
+  x.fillText('GLÄSER GERETTET 🍷',540,1025);
+  /* Platzierung */
+  var rk=window._lastRank,tot=window._lastTotal;
+  x.fillStyle='#1a1a1a';x.font='700 56px "Barlow Condensed",sans-serif';
+  if(rk&&tot){x.fillText('Platz '+rk+' von '+tot,540,1300);}
+  if(elapsed>0){x.font='500 38px Inter,sans-serif';x.globalAlpha=.6;
+    x.fillText('in '+elapsed.toFixed(1)+' Sekunden',540,1370);x.globalAlpha=1;}
+  /* Footer / Handle */
+  x.fillStyle='#8E1528';
+  x.font='700 46px Inter,sans-serif';
+  x.fillText('@morandell.international',540,1680);
+  x.font='600 36px Inter,sans-serif';x.globalAlpha=.75;
+  x.fillText(EVT.hashtag,540,1745);
+  x.font='500 30px Inter,sans-serif';x.globalAlpha=.5;
+  x.fillText('Führender Weinspezialist seit 1926',540,1810);x.globalAlpha=1;
+  return c;
+}
+
+function shareCaption(){
+  return 'Ich habe '+score+' Gläser bei der Morandell Gipfel-Challenge gerettet! 🍷⛰ '+
+         EVT.hashtag+' @morandell.international';
+}
+
+document.getElementById('shareBtn').addEventListener('click',function(){
+  track('share_click',{score:score});
+  var card=buildShareCard();
+  card.toBlob(function(blob){
+    if(!blob)return;
+    var file=new File([blob],'morandell-gipfel-challenge.png',{type:'image/png'});
+    var hint=document.getElementById('shareHint');
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      navigator.share({files:[file],text:shareCaption()}).catch(function(){});
+    }else{
+      /* Fallback: Download + Caption kopieren */
+      var a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);a.download='morandell-gipfel-challenge.png';
+      document.body.appendChild(a);a.click();a.remove();
+      try{navigator.clipboard.writeText(shareCaption());}catch(e){}
+      hint.style.display='block';
+      hint.textContent='Bild gespeichert! Caption ist kopiert — einfach in deine Story einfügen und @morandell.international taggen.';
+    }
+  },'image/png');
+});
 
 /* ══════════ CANVAS ══════════ */
 var cv=document.getElementById('c');
@@ -1149,10 +1340,21 @@ var $eOv=document.getElementById('endOv');
 var $hud=document.getElementById('hud');
 document.getElementById('pN').value=getSavedName();
 
+/* Event-Texte anwenden (Ellmau/Galzig je nach ?event=…) */
+(function(){
+  try{
+    document.title=EVT.title;
+    var ey=document.querySelector('.s-eyebrow');if(ey)ey.textContent=EVT.eyebrow;
+    var el=document.querySelector('.elabel');if(el)el.textContent=EVT.station;
+  }catch(e){}
+})();
+
 document.getElementById('startBtn').addEventListener('click',function(){
   $sOv.classList.add('hidden');
   $hud.classList.remove('hidden');
   reset();t0=performance.now();state='riding';
+  track('game_start',{run:run+1});
+  logPlay(run+1);
 });
 
 document.getElementById('submitNameBtn').addEventListener('click',function(){
@@ -1169,7 +1371,10 @@ document.getElementById('pN').addEventListener('keydown',function(e){
 });
 
 document.getElementById('againBtn').addEventListener('click',function(){
-  run++;$eOv.classList.add('hidden');
+  run++;
+  track('replay',{run:run+1});
+  logPlay(run+1);
+  $eOv.classList.add('hidden');
   // Reset end screen panels for next round
   document.getElementById('nameStep').classList.remove('hidden');
   document.getElementById('scoreStep').classList.add('hidden');
@@ -1193,6 +1398,7 @@ async function submitScore(){
 async function finish(){
   state='summit';
   elapsed=(performance.now()-t0)/1000;
+  track('game_complete',{score:score,time_s:Math.round(elapsed*10)/10,run:run+1});
   hideQ();$hud.classList.add('hidden');
   document.getElementById('eS').textContent=score;
   document.getElementById('eT').textContent=elapsed>0?fmtT(elapsed):'';
@@ -1216,7 +1422,7 @@ async function finish(){
 function updateHud(){
   document.getElementById('hS').textContent=score;
   document.getElementById('hfill').style.width=(prog*100).toFixed(1)+'%';
-  var alt=Math.round(800+prog*779);
+  var alt=Math.round(EVT.altBase+prog*(EVT.altTop-EVT.altBase));
   document.getElementById('hA').textContent=alt.toLocaleString('de-AT')+'m';
   if(state==='riding'&&t0){
     document.getElementById('hT').textContent=((performance.now()-t0)/1000).toFixed(1)+'s';
