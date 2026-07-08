@@ -1056,8 +1056,19 @@ function lerpC(c1,c2,t){
 }
 function xss(s){return String(s).replace(/[<>&"']/g,'').trim().slice(0,20)||'Gast';}
 function fmtT(s){return(!s||s<=0)?'':s.toFixed(1)+'s';}
-function getSavedName(){try{return localStorage.getItem('ge_pname')||'';}catch(e){return'';}}
-function saveName(n){try{localStorage.setItem('ge_pname',n);}catch(e){}}
+/* Name wird nur für den aktuellen Tag gemerkt — ab Mitternacht
+   muss er neu eingegeben werden (passend zum täglichen Ranglisten-Reset). */
+function todayStr(){var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function getSavedName(){
+  try{
+    var raw=localStorage.getItem('ge_pname');
+    if(!raw)return'';
+    var o;try{o=JSON.parse(raw);}catch(e){return'';}   /* altes Format → verfallen */
+    if(o&&o.n&&(!DAILY_RESET||o.d===todayStr()))return o.n;
+    return'';
+  }catch(e){return'';}
+}
+function saveName(n){try{localStorage.setItem('ge_pname',JSON.stringify({n:n,d:todayStr()}));}catch(e){}}
 
 /* ══════════ SUPABASE LIVE LEADERBOARD ══════════ */
 var SB_URL='https://zrmjnjuzxyimktmhzxze.supabase.co';
@@ -1074,22 +1085,40 @@ function deviceId(){
   }catch(e){return 'anon';}
 }
 
+/* ══════════ RANGLISTEN-ZEITFENSTER ══════════
+   Es zählen nur Scores vom HEUTIGEN Tag (00:00 bis 23:59 Uhr).
+   Um Mitternacht startet die Rangliste automatisch frisch.
+   Die Daten bleiben in Supabase für eure Auswertung erhalten.
+   Auf false setzen = kein Limit (alle Scores für immer anzeigen). */
+var DAILY_RESET=true;
+function windowFilter(){
+  if(!DAILY_RESET)return '';
+  var d=new Date();d.setHours(0,0,0,0);   /* heute 00:00 Uhr (lokale Zeit) */
+  return '&ts=gte.'+d.getTime();
+}
+/* Gleiches Zeitfenster für lokal gespeicherte Scores (Offline-Fallback) */
+function inWindow(s){
+  if(!DAILY_RESET)return true;
+  var d=new Date();d.setHours(0,0,0,0);
+  return (s&&s.ts||0)>=d.getTime();
+}
+
 async function dbLoad(){
   var H={headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}};
   try{
     /* Nach Event gefiltert (benötigt die Spalte "event", SQL siehe README) */
-    var res=await fetch(SB_URL+'/rest/v1/scores?select=name,pts,t,ts&event=eq.'+EVT.key+'&order=pts.desc,t.asc&limit=100',H);
+    var res=await fetch(SB_URL+'/rest/v1/scores?select=name,pts,t,ts&event=eq.'+EVT.key+windowFilter()+'&order=pts.desc,t.asc&limit=100',H);
     if(!res.ok)throw new Error('filtered load failed');
     return await res.json();
   }catch(e){
     try{
       /* Spalte "event" existiert noch nicht → ungefiltert laden */
-      var res2=await fetch(SB_URL+'/rest/v1/scores?select=name,pts,t,ts&order=pts.desc,t.asc&limit=100',H);
+      var res2=await fetch(SB_URL+'/rest/v1/scores?select=name,pts,t,ts'+windowFilter()+'&order=pts.desc,t.asc&limit=100',H);
       if(!res2.ok)throw new Error('load failed');
       return await res2.json();
     }catch(e1){
-      // Fallback: localStorage
-      try{return JSON.parse(localStorage.getItem('ge_scores')||'[]');}catch(e2){return[];}
+      // Fallback: localStorage (auch hier nur Scores von heute)
+      try{return JSON.parse(localStorage.getItem('ge_scores')||'[]').filter(inWindow);}catch(e2){return[];}
     }
   }
 }
@@ -1132,9 +1161,9 @@ async function dbPush(name,pts,t){
     // Load updated leaderboard
     return await dbLoad();
   }catch(e){
-    // Fallback: localStorage
+    // Fallback: localStorage (auch hier nur Scores von heute)
     try{
-      var all=JSON.parse(localStorage.getItem('ge_scores')||'[]');
+      var all=JSON.parse(localStorage.getItem('ge_scores')||'[]').filter(inWindow);
       all.push({name:xss(name),pts:pts,t:t,ts:Date.now()});
       all.sort(function(a,b){return b.pts-a.pts||a.t-b.t;});
       var top=all.slice(0,100);
@@ -1217,27 +1246,32 @@ function buildShareCard(){
   x.font='600 40px Inter,sans-serif';x.fillStyle='#1a1a1a';
   x.fillText(EVT.eyebrow.replace(/·/g,'—'),540,500);
   /* Score-Kreis */
-  x.beginPath();x.arc(540,880,280,0,Math.PI*2);
+  x.beginPath();x.arc(540,880,300,0,Math.PI*2);
   x.fillStyle='#8E1528';x.fill();
   x.fillStyle='#FFFDF8';
-  x.font='900 250px "Barlow Condensed",sans-serif';
-  x.fillText(String(score),540,940);
-  x.font='700 50px "Barlow Condensed",sans-serif';
-  x.fillText('GLÄSER GERETTET 🍷',540,1025);
+  /* Textgrößen automatisch an den Kreis anpassen */
+  function fit(txt,weight,fam,start,maxW){
+    var s=start;
+    do{x.font=weight+' '+s+'px '+fam;
+       if(x.measureText(txt).width<=maxW)break;s-=2;}while(s>18);
+    return s;
+  }
+  fit(String(score),'900','"Barlow Condensed",sans-serif',240,400);
+  x.fillText(String(score),540,930);
+  fit('GLÄSER GERETTET','700','"Barlow Condensed",sans-serif',46,430);
+  x.fillText('GLÄSER GERETTET',540,1035);
   /* Platzierung */
   var rk=window._lastRank,tot=window._lastTotal;
   x.fillStyle='#1a1a1a';x.font='700 56px "Barlow Condensed",sans-serif';
-  if(rk&&tot){x.fillText('Platz '+rk+' von '+tot,540,1300);}
+  if(rk&&tot){x.fillText('Platz '+rk+' von '+tot,540,1320);}
   if(elapsed>0){x.font='500 38px Inter,sans-serif';x.globalAlpha=.6;
-    x.fillText('in '+elapsed.toFixed(1)+' Sekunden',540,1370);x.globalAlpha=1;}
-  /* Footer / Handle */
+    x.fillText('in '+elapsed.toFixed(1)+' Sekunden',540,1390);x.globalAlpha=1;}
+  /* Footer */
   x.fillStyle='#8E1528';
-  x.font='700 46px Inter,sans-serif';
-  x.fillText('@morandell.international',540,1680);
-  x.font='600 36px Inter,sans-serif';x.globalAlpha=.75;
-  x.fillText(EVT.hashtag,540,1745);
+  x.font='700 44px Inter,sans-serif';
+  x.fillText(EVT.hashtag,540,1700);
   x.font='500 30px Inter,sans-serif';x.globalAlpha=.5;
-  x.fillText('Führender Weinspezialist seit 1926',540,1810);x.globalAlpha=1;
+  x.fillText('Führender Weinspezialist seit 1926',540,1770);x.globalAlpha=1;
   return c;
 }
 
