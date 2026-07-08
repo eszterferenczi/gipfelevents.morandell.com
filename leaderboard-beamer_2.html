@@ -906,12 +906,21 @@ function tick(){
 tick();setInterval(tick,15000);
 
 /* ══════════ DATEN LADEN ══════════ */
+/* Es zählen nur Scores vom HEUTIGEN Tag (00:00 bis 23:59 Uhr) —
+   um Mitternacht startet die Rangliste automatisch frisch.
+   Daten bleiben in Supabase. Auf false setzen = kein Limit. */
+var DAILY_RESET=true;
+function windowFilter(){
+  if(!DAILY_RESET)return '';
+  var d=new Date();d.setHours(0,0,0,0);   /* heute 00:00 Uhr (lokale Zeit) */
+  return '&ts=gte.'+d.getTime();
+}
 function xss(s){return String(s).replace(/[<>&"']/g,'').trim().slice(0,20)||'Gast';}
 function fmtT(s){return(!s||s<=0)?'':Number(s).toFixed(1)+'s';}
 
 async function load(){
   var H={headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}};
-  var base=SB_URL+'/rest/v1/scores?select=name,pts,t,ts';
+  var base=SB_URL+'/rest/v1/scores?select=name,pts,t,ts'+windowFilter();
   try{
     var res=await fetch(base+'&event=eq.'+EVT.key+'&order=pts.desc,t.asc&limit=200',H);
     if(!res.ok)throw new Error('filtered failed');
