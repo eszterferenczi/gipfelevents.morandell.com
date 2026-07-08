@@ -918,18 +918,34 @@ function windowFilter(){
 function xss(s){return String(s).replace(/[<>&"']/g,'').trim().slice(0,20)||'Gast';}
 function fmtT(s){return(!s||s<=0)?'':Number(s).toFixed(1)+'s';}
 
+/* Pro Person (Geräte-ID + Name) zählt nur der beste Score */
+function pKey(s){
+  var n=String(s&&s.name||'').toLowerCase().trim();
+  return (s&&s.device)?('d:'+s.device+'|'+n):('n:'+n);
+}
+function bestPerPlayer(list){
+  var best={};
+  (list||[]).forEach(function(s){
+    var k=pKey(s),b=best[k];
+    if(!b||s.pts>b.pts||(s.pts===b.pts&&(s.t||9e9)<(b.t||9e9)))best[k]=s;
+  });
+  var out=Object.keys(best).map(function(k){return best[k];});
+  out.sort(function(a,b){return b.pts-a.pts||(a.t||9e9)-(b.t||9e9);});
+  return out;
+}
+
 async function load(){
   var H={headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}};
-  var base=SB_URL+'/rest/v1/scores?select=name,pts,t,ts'+windowFilter();
+  var base=SB_URL+'/rest/v1/scores?select=name,pts,t,ts,device'+windowFilter();
   try{
-    var res=await fetch(base+'&event=eq.'+EVT.key+'&order=pts.desc,t.asc&limit=200',H);
+    var res=await fetch(base+'&event=eq.'+EVT.key+'&order=pts.desc,t.asc&limit=300',H);
     if(!res.ok)throw new Error('filtered failed');
-    return await res.json();
+    return bestPerPlayer(await res.json());
   }catch(e){
-    /* Spalte "event" fehlt noch → ungefiltert */
+    /* Spalte "event"/"device" fehlt noch → einfacher laden */
     try{
-      var r2=await fetch(base+'&order=pts.desc,t.asc&limit=200',H);
-      return r2.ok?await r2.json():[];
+      var r2=await fetch(SB_URL+'/rest/v1/scores?select=name,pts,t,ts'+windowFilter()+'&order=pts.desc,t.asc&limit=300',H);
+      return r2.ok?bestPerPlayer(await r2.json()):[];
     }catch(e2){return null;}   /* null = offline */
   }
 }
