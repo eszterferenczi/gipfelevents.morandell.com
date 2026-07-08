@@ -1012,9 +1012,9 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
       </div>
       <div class="s-name-wrap" style="margin:0 0 14px">
         <label for="pN">Dein Vorname + Anfangsbuchstabe</label>
-        <input id="pN" type="text" placeholder="z.B. Christoph M." maxlength="20"
+        <input id="pN" type="text" placeholder="z.B. Sabine G." maxlength="20"
                autocomplete="off" autocorrect="off" spellcheck="false">
-        <div class="s-priv">💡 Vorname + erster Buchstabe des Nachnamens (z.B. „Christoph M.") — so gibt's keine Verwechslung bei der Verlosung! 🔒 Mehr wird nicht gespeichert.</div>
+        <div class="s-priv">💡 Vorname + erster Buchstabe des Nachnamens (z.B. „Sabine G.") — so gibt's keine Verwechslung bei der Verlosung! 🔒 Mehr wird nicht gespeichert.</div>
       </div>
       <button class="btn-play" id="submitNameBtn">Ergebnis anzeigen</button>
     </div>
@@ -1103,22 +1103,42 @@ function inWindow(s){
   return (s&&s.ts||0)>=d.getTime();
 }
 
+/* ══════════ BESTER SCORE PRO PERSON ══════════
+   Jede Person (erkannt an Geräte-ID + Name) erscheint nur EINMAL in der
+   Rangliste — mit ihrem besten Ergebnis. Spielt jemand nochmal und ist
+   schlechter, bleibt der alte Platz einfach stehen. Alle Versuche werden
+   trotzdem in der Datenbank gespeichert (für eure Auswertung). */
+function pKey(s){
+  var n=String(s&&s.name||'').toLowerCase().trim();
+  return (s&&s.device)?('d:'+s.device+'|'+n):('n:'+n);
+}
+function bestPerPlayer(list){
+  var best={};
+  (list||[]).forEach(function(s){
+    var k=pKey(s),b=best[k];
+    if(!b||s.pts>b.pts||(s.pts===b.pts&&(s.t||9e9)<(b.t||9e9)))best[k]=s;
+  });
+  var out=Object.keys(best).map(function(k){return best[k];});
+  out.sort(function(a,b){return b.pts-a.pts||(a.t||9e9)-(b.t||9e9);});
+  return out;
+}
+
 async function dbLoad(){
   var H={headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}};
   try{
     /* Nach Event gefiltert (benötigt die Spalte "event", SQL siehe README) */
-    var res=await fetch(SB_URL+'/rest/v1/scores?select=name,pts,t,ts&event=eq.'+EVT.key+windowFilter()+'&order=pts.desc,t.asc&limit=100',H);
+    var res=await fetch(SB_URL+'/rest/v1/scores?select=name,pts,t,ts,device&event=eq.'+EVT.key+windowFilter()+'&order=pts.desc,t.asc&limit=300',H);
     if(!res.ok)throw new Error('filtered load failed');
-    return await res.json();
+    return bestPerPlayer(await res.json());
   }catch(e){
     try{
       /* Spalte "event" existiert noch nicht → ungefiltert laden */
-      var res2=await fetch(SB_URL+'/rest/v1/scores?select=name,pts,t,ts'+windowFilter()+'&order=pts.desc,t.asc&limit=100',H);
+      var res2=await fetch(SB_URL+'/rest/v1/scores?select=name,pts,t,ts'+windowFilter()+'&order=pts.desc,t.asc&limit=300',H);
       if(!res2.ok)throw new Error('load failed');
-      return await res2.json();
+      return bestPerPlayer(await res2.json());
     }catch(e1){
       // Fallback: localStorage (auch hier nur Scores von heute)
-      try{return JSON.parse(localStorage.getItem('ge_scores')||'[]').filter(inWindow);}catch(e2){return[];}
+      try{return bestPerPlayer(JSON.parse(localStorage.getItem('ge_scores')||'[]').filter(inWindow));}catch(e2){return[];}
     }
   }
 }
@@ -1164,11 +1184,11 @@ async function dbPush(name,pts,t){
     // Fallback: localStorage (auch hier nur Scores von heute)
     try{
       var all=JSON.parse(localStorage.getItem('ge_scores')||'[]').filter(inWindow);
-      all.push({name:xss(name),pts:pts,t:t,ts:Date.now()});
+      all.push({name:xss(name),pts:pts,t:t,ts:Date.now(),device:deviceId()});
       all.sort(function(a,b){return b.pts-a.pts||a.t-b.t;});
       var top=all.slice(0,100);
       localStorage.setItem('ge_scores',JSON.stringify(top));
-      return top;
+      return bestPerPlayer(top);
     }catch(e2){return[];}
   }
 }
@@ -1176,12 +1196,18 @@ async function dbPush(name,pts,t){
 /* ══════════ LEADERBOARD RENDER ══════════ */
 function renderEnd(scores,myName,myPts,myT){
   var all=scores||[];
-  var mi=all.findIndex(function(s){return s.name===myName&&s.pts===myPts&&Math.abs((s.t||0)-myT)<2;});
+  /* Eigenen Eintrag über Geräte-ID + Name finden (= bester eigener Score) */
+  var myKey='d:'+deviceId()+'|'+String(myName).toLowerCase().trim();
+  var mi=all.findIndex(function(s){return pKey(s)===myKey;});
+  if(mi<0)mi=all.findIndex(function(s){return s.name===myName&&s.pts===myPts&&Math.abs((s.t||0)-myT)<2;});
   var mr=mi>=0?mi+1:all.length+1;
   var tot=all.length;
+  var bestPts=mi>=0?all[mi].pts:myPts;
   window._lastRank=mr;window._lastTotal=tot;
   document.getElementById('mRN').textContent=mr;
-  document.getElementById('mRL').textContent=mr===1?'Du führst die Rangliste an!':'Deine Platzierung';
+  document.getElementById('mRL').textContent=
+    mr===1?'Du führst die Rangliste an!':
+    (bestPts>myPts?'Dein bester Score zählt: '+bestPts+' Punkte':'Deine Platzierung');
   document.getElementById('mRS').textContent=tot>0?('Platz '+mr+' von '+tot+' Teilnehmer'+(tot!==1?'n':'')):'Erster Spieler!';
   var mc=['g','s','b'],ml=['1','2','3'];
   var top3=all.slice(0,3);
